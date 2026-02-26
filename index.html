@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>智能记账本</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 100%;
+            min-height: 100vh;
+            padding-bottom: 70px;
+        }
+        
+        /* 顶部导航栏 */
+        .header {
+            background-color: #3498db;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* 页面内容 */
+        .page {
+            display: none;
+            padding: 15px;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        /* 底部导航 */
+        .nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+        
+        .nav-item.active {
+            color: #3498db;
+        }
+        
+        .nav-item .icon {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        
+        .nav-item .text {
+            font-size: 12px;
+        }
+        
+        /* 首页样式 */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-section {
+            margin-bottom: 20px;
+        }
+        
+        .summary-section h2 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .summary-card {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .summary-card h3 {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+        
+        .summary-card .amount {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .summary-card .income {
+            color: #27ae60;
+        }
+        
+        .summary-card .expense {
+            color: #e74c3c;
+        }
+        
+        .summary-card .balance {
+            color: #f39c12;
+        }
+        
+        /* 快速输入栏 */
+        .quick-input {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .quick-input h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        #quickInputText {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .input-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button.secondary {
+            background-color: #95a5a6;
+        }
+        
+        button.secondary:hover {
+            background-color: #7f8c8d;
+        }
+        
+        /* 本月收支列表 */
+        .records-list {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .records-list h3 {
+            font-size: 16px;
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .record-item {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .record-item:last-child {
+            border-bottom: none;
+        }
+        
+        .record-info {
+            flex: 1;
+        }
+        
+        .record-desc {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .record-meta {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        
+        .record-amount {
+            font-weight: bold;
+        }
+        
+        .record-amount.income {
+            color: #27ae60;
+        }
+        
+        .record-amount.expense {
+            color: #e74c3c;
+        }
+        
+        /* 查询页面样式 */
+        .filter-section {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .filter-group {
+            margin-bottom: 15px;
+        }
+        
+        .filter-group label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #7f8c8d;
+        }
+        
+        .filter-group input,
+        .filter-group select {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+        
+        .date-range {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .date-range input {
+            flex: 1;
+        }
+        
+        /* 图表容器 */
+        .chart-container {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            height: 300px;
+        }
+        
+        /* 设置页面样式 */
+        .settings-group {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .settings-group h3 {
+            font-size: 16px;
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .setting-item {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+        
+        .setting-item .label {
+            font-size: 14px;
+        }
+        
+        .setting-item .value {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        
+        /* 科目设置 */
+        .category-settings {
+            padding: 15px;
+        }
+        
+        .category-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .category-item:last-child {
+            border-bottom: none;
+        }
+        
+        .category-item .name {
+            font-size: 14px;
+        }
+        
+        .category-item .keywords {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        
+        /* 数据导入导出 */
+        .data-io {
+            padding: 15px;
+        }
+        
+        .data-io button {
+            margin-bottom: 10px;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .date-range {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部导航栏 -->
+        <div class="header" id="header">首页</div>
+        
+        <!-- 首页 -->
+        <div class="page active" id="homePage">
+            <!-- 本月收支汇总 -->
+            <div class="summary-section">
+                <h2>本月收支</h2>
+                <div class="summary-cards">
+                    <div class="summary-card">
+                        <h3>收入</h3>
+                        <div class="amount income" id="monthlyIncome">0</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>支出</h3>
+                        <div class="amount expense" id="monthlyExpense">0</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>结余</h3>
+                        <div class="amount balance" id="monthlyBalance">0</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 本年收支汇总 -->
+            <div class="summary-section">
+                <h2>本年收支</h2>
+                <div class="summary-cards">
+                    <div class="summary-card">
+                        <h3>收入</h3>
+                        <div class="amount income" id="yearlyIncome">0</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>支出</h3>
+                        <div class="amount expense" id="yearlyExpense">0</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>结余</h3>
+                        <div class="amount balance" id="yearlyBalance">0</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 快速输入栏 -->
+            <div class="quick-input">
+                <h3>快速输入</h3>
+                <input type="text" id="quickInputText" placeholder="例如：给女儿买书56元 或 工资收入5000元">
+                <div style="margin-bottom: 10px;">
+                    <label for="recordDate" style="font-size: 14px; color: #7f8c8d; margin-right: 10px;">日期:</label>
+                    <input type="date" id="recordDate" style="padding: 8px; border: 1px solid #e0e0e0; border-radius: 4px;">
+                </div>
+                <div class="input-buttons">
+                    <button onclick="saveQuickRecord()">保存</button>
+                </div>
+                <div class="result" id="quickResult" style="display: none; margin-top: 10px; padding: 10px; background-color: #e8f4f8; border-radius: 4px;">
+                    <p>类型: <span id="quickTypeResult"></span></p>
+                    <p>金额: <span id="quickAmountResult"></span> 元</p>
+                    <p>对象: <span id="quickTargetResult"></span></p>
+                    <p>描述: <span id="quickDescResult"></span></p>
+                </div>
+            </div>
+            
+            <!-- 本月收支列表 -->
+            <div class="records-list">
+                <h3>本月收支</h3>
+                <div id="monthlyRecordsList">
+                    <!-- 本月收支记录将在这里显示 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 查询页面 -->
+        <div class="page" id="queryPage">
+            <!-- 筛选条件 -->
+            <div class="filter-section">
+                <h3>筛选条件</h3>
+                <div class="filter-group">
+                    <label>起止时间</label>
+                    <div class="date-range">
+                        <input type="date" id="startDate">
+                        <input type="date" id="endDate">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label>收支类型</label>
+                    <select id="typeFilter">
+                        <option value="all">全部</option>
+                        <option value="income">收入</option>
+                        <option value="expense">支出</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>分类</label>
+                    <select id="categoryFilter">
+                        <option value="all">全部</option>
+                        <option value="food">餐饮</option>
+                        <option value="shopping">购物</option>
+                        <option value="transport">交通</option>
+                        <option value="entertainment">娱乐</option>
+                        <option value="other">其他</option>
+                    </select>
+                </div>
+                <button onclick="applyFilters()">应用筛选</button>
+            </div>
+            
+            <!-- 圆饼图 -->
+            <div class="chart-container">
+                <canvas id="expenseChart"></canvas>
+            </div>
+            
+            <!-- 筛选结果 -->
+            <div class="records-list">
+                <h3>筛选结果</h3>
+                <div id="filteredRecordsList">
+                    <!-- 筛选结果将在这里显示 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 设置页面 -->
+        <div class="page" id="settingsPage">
+            <!-- 科目设置 -->
+            <div class="settings-group">
+                <h3>科目设置</h3>
+                <div class="category-settings" id="categorySettings">
+                    <!-- 科目列表将动态渲染 -->
+                </div>
+                <div class="setting-item">
+                    <span class="label">添加科目</span>
+                    <button onclick="addCategory()">添加</button>
+                </div>
+            </div>
+            
+            <!-- 数据导入导出 -->
+            <div class="settings-group">
+                <h3>数据管理</h3>
+                <div class="data-io">
+                    <button onclick="exportData()">导出数据</button>
+                    <button onclick="importData()">导入数据</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 底部导航 -->
+        <div class="nav">
+            <div class="nav-item active" onclick="switchPage('homePage', '首页')">
+                <div class="icon">🏠</div>
+                <div class="text">首页</div>
+            </div>
+            <div class="nav-item" onclick="switchPage('queryPage', '查询')">
+                <div class="icon">🔍</div>
+                <div class="text">查询</div>
+            </div>
+            <div class="nav-item" onclick="switchPage('settingsPage', '设置')">
+                <div class="icon">⚙️</div>
+                <div class="text">设置</div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // 全局变量
+        let records = JSON.parse(localStorage.getItem('accountRecords') || '[]');
+        let categories = JSON.parse(localStorage.getItem('categories') || JSON.stringify({
+            food: { name: '餐饮', keywords: ['吃饭', '聚餐', '外卖'] },
+            shopping: { name: '购物', keywords: ['买', '购物', '商城'] },
+            transport: { name: '交通', keywords: ['打车', '公交', '地铁'] },
+            entertainment: { name: '娱乐', keywords: ['电影', '游戏', '娱乐'] },
+            other: { name: '其他', keywords: ['其他'] }
+        }));
+        let currentRecord = null;
+        let editingIndex = -1;
+        
+        // 暴露records到全局作用域，供查询页面使用
+        window.records = records;
+        
+        // 页面切换
+        function switchPage(pageId, title) {
+            // 隐藏所有页面
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // 显示选中页面
+            document.getElementById(pageId).classList.add('active');
+            
+            // 更新标题
+            document.getElementById('header').textContent = title;
+            
+            // 更新导航状态
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+            
+            // 页面加载时执行对应操作
+            if (pageId === 'homePage') {
+                updateHomePage();
+            } else if (pageId === 'queryPage') {
+                initQueryPage();
+            } else if (pageId === 'settingsPage') {
+                renderCategories();
+            }
+        }
+        
+        // 渲染科目列表
+        function renderCategories() {
+            const categorySettings = document.getElementById('categorySettings');
+            categorySettings.innerHTML = '';
+            
+            if (Object.keys(categories).length === 0) {
+                categorySettings.innerHTML = '<div style="padding: 20px; text-align: center; color: #7f8c8d;">暂无科目</div>';
+                return;
+            }
+            
+            Object.entries(categories).forEach(([id, category]) => {
+                // 跳过其他科目，它是默认科目，不允许删除
+                if (id === 'other') return;
+                
+                const categoryElement = document.createElement('div');
+                categoryElement.className = 'category-item';
+                categoryElement.innerHTML = `
+                    <div style="flex: 1;">
+                        <div class="name">${category.name}</div>
+                        <div class="keywords">${category.keywords.join(', ')}</div>
+                    </div>
+                    <div style="display: flex; gap: 5px;">
+                        <button onclick="editCategory('${id}')" style="padding: 5px 10px; font-size: 12px;">编辑</button>
+                        <button onclick="deleteCategory('${id}')" style="padding: 5px 10px; font-size: 12px; background-color: #e74c3c;">删除</button>
+                    </div>
+                `;
+                categorySettings.appendChild(categoryElement);
+            });
+            
+            // 添加其他科目（默认科目，不允许删除）
+            const otherCategory = categories.other;
+            if (otherCategory) {
+                const otherElement = document.createElement('div');
+                otherElement.className = 'category-item';
+                otherElement.innerHTML = `
+                    <div style="flex: 1;">
+                        <div class="name">${otherCategory.name}</div>
+                        <div class="keywords">${otherCategory.keywords.join(', ')}</div>
+                    </div>
+                    <button onclick="editCategory('other')" style="padding: 5px 10px; font-size: 12px;">编辑</button>
+                `;
+                categorySettings.appendChild(otherElement);
+            }
+        }
+        
+        // 删除科目
+        function deleteCategory(categoryId) {
+            // 不允许删除默认的其他科目
+            if (categoryId === 'other') {
+                alert('默认科目"其他"不允许删除');
+                return;
+            }
+            
+            if (confirm('确定要删除这个科目吗？')) {
+                delete categories[categoryId];
+                localStorage.setItem('categories', JSON.stringify(categories));
+                renderCategories();
+            }
+        }
+        
+        // 更新首页数据
+        function updateHomePage() {
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
+            // 计算本月收支
+            const monthlyRecords = records.filter(record => {
+                const recordDate = new Date(record.date);
+                return recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear;
+            });
+            
+            const monthlyIncome = monthlyRecords.filter(r => r.type === '收入').reduce((sum, r) => sum + r.amount, 0);
+            const monthlyExpense = monthlyRecords.filter(r => r.type === '支出').reduce((sum, r) => sum + r.amount, 0);
+            const monthlyBalance = monthlyIncome - monthlyExpense;
+            
+            // 计算本年收支
+            const yearlyRecords = records.filter(record => {
+                const recordDate = new Date(record.date);
+                return recordDate.getFullYear() === currentYear;
+            });
+            
+            const yearlyIncome = yearlyRecords.filter(r => r.type === '收入').reduce((sum, r) => sum + r.amount, 0);
+            const yearlyExpense = yearlyRecords.filter(r => r.type === '支出').reduce((sum, r) => sum + r.amount, 0);
+            const yearlyBalance = yearlyIncome - yearlyExpense;
+            
+            // 更新UI
+            document.getElementById('monthlyIncome').textContent = monthlyIncome.toFixed(2);
+            document.getElementById('monthlyExpense').textContent = monthlyExpense.toFixed(2);
+            document.getElementById('monthlyBalance').textContent = monthlyBalance.toFixed(2);
+            document.getElementById('yearlyIncome').textContent = yearlyIncome.toFixed(2);
+            document.getElementById('yearlyExpense').textContent = yearlyExpense.toFixed(2);
+            document.getElementById('yearlyBalance').textContent = yearlyBalance.toFixed(2);
+            
+            // 更新本月收支列表
+            updateMonthlyRecordsList(monthlyRecords);
+        }
+        
+        // 更新本月收支列表
+        function updateMonthlyRecordsList(records) {
+            const recordsList = document.getElementById('monthlyRecordsList');
+            recordsList.innerHTML = '';
+            
+            if (records.length === 0) {
+                recordsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #7f8c8d;">暂无记录</div>';
+                return;
+            }
+            
+            // 按日期倒序排序
+            records.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            records.forEach((record) => {
+                const recordElement = document.createElement('div');
+                recordElement.className = 'record-item';
+                recordElement.innerHTML = `
+                    <div class="record-info" style="flex: 1;">
+                        <div class="record-desc">${record.desc}</div>
+                        <div class="record-meta">${record.category || '其他'} · ${formatDate(record.date)}</div>
+                    </div>
+                    <div class="record-amount ${record.type === '收入' ? 'income' : 'expense'}">
+                        ${record.type === '收入' ? '+' : '-' }${record.amount.toFixed(2)}
+                    </div>
+                `;
+                recordsList.appendChild(recordElement);
+            });
+        }
+        
+        // 快速输入解析
+        function parseQuickInput() {
+            const input = document.getElementById('quickInputText').value;
+            if (!input) return;
+            
+            // 解析金额
+            const amountMatch = input.match(/(\d+(?:\.\d+)?)元/);
+            const amount = amountMatch ? parseFloat(amountMatch[1]) : 0;
+            
+            // 解析对象
+            let target = '个人';
+            const targetMatches = input.match(/给([^买\s]+)买/);
+            if (targetMatches) {
+                target = targetMatches[1];
+            }
+            
+            // 解析描述
+            let desc = input;
+            if (amountMatch) {
+                desc = input.replace(amountMatch[0], '').trim();
+            }
+            
+            // 确定类型（包含收入相关词汇时为收入，否则为支出）
+            const incomeKeywords = ['收入', '工资', '奖金', '红包', '转账', '回款', '进账'];
+            const type = incomeKeywords.some(keyword => input.includes(keyword)) ? '收入' : '支出';
+            
+            // 自动分类
+            let category = '其他';
+            for (const [key, cat] of Object.entries(categories)) {
+                if (cat.keywords.some(keyword => desc.includes(keyword))) {
+                    category = cat.name;
+                    break;
+                }
+            }
+            
+            // 获取用户选择的日期
+            const recordDateInput = document.getElementById('recordDate').value;
+            const recordDate = recordDateInput ? new Date(recordDateInput) : new Date();
+            
+            // 显示解析结果
+            currentRecord = {
+                type,
+                amount,
+                target,
+                desc,
+                category,
+                date: recordDate.toISOString()
+            };
+            
+            document.getElementById('quickTypeResult').textContent = type;
+            document.getElementById('quickAmountResult').textContent = amount;
+            document.getElementById('quickTargetResult').textContent = target;
+            document.getElementById('quickDescResult').textContent = desc;
+            document.getElementById('quickResult').style.display = 'block';
+        }
+        
+        // 保存快速记录
+        function saveQuickRecord() {
+            // 先解析输入内容
+            parseQuickInput();
+            
+            if (currentRecord) {
+                if (editingIndex >= 0) {
+                    // 更新现有记录
+                    records[editingIndex] = currentRecord;
+                    editingIndex = -1;
+                } else {
+                    // 添加新记录
+                    records.push(currentRecord);
+                }
+                localStorage.setItem('accountRecords', JSON.stringify(records));
+                window.records = records;
+                updateHomePage();
+                
+                // 清空输入
+                document.getElementById('quickInputText').value = '';
+                document.getElementById('recordDate').value = '';
+                document.getElementById('quickResult').style.display = 'none';
+                currentRecord = null;
+            }
+        }
+        
+        // 初始化查询页面
+        function initQueryPage() {
+            // 设置默认日期范围为当月
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            
+            document.getElementById('startDate').value = formatDateInput(firstDay);
+            document.getElementById('endDate').value = formatDateInput(lastDay);
+            
+            // 应用默认筛选
+            applyFilters();
+        }
+        
+        // 应用筛选
+        function applyFilters() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            
+            // 筛选记录
+            let filteredRecords = records.filter(record => {
+                const recordDate = new Date(record.date);
+                const start = startDate ? new Date(startDate) : new Date(0);
+                const end = endDate ? new Date(endDate) : new Date();
+                end.setHours(23, 59, 59, 999);
+                
+                const dateMatch = recordDate >= start && recordDate <= end;
+                const typeMatch = typeFilter === 'all' || (typeFilter === 'income' && record.type === '收入') || (typeFilter === 'expense' && record.type === '支出');
+                const categoryMatch = categoryFilter === 'all' || record.category === categories[categoryFilter]?.name;
+                
+                return dateMatch && typeMatch && categoryMatch;
+            });
+            
+            // 更新筛选结果列表
+            updateFilteredRecordsList(filteredRecords);
+            
+            // 更新图表
+            updateChart(filteredRecords);
+        }
+        
+        // 更新筛选结果列表
+        function updateFilteredRecordsList(records) {
+            const recordsList = document.getElementById('filteredRecordsList');
+            recordsList.innerHTML = '';
+            
+            if (records.length === 0) {
+                recordsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #7f8c8d;">暂无记录</div>';
+                return;
+            }
+            
+            // 按日期倒序排序
+            records.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            records.forEach((record, index) => {
+                // 找到原始记录的索引
+                const originalIndex = window.records.findIndex(r => r.date === record.date && r.amount === record.amount && r.desc === record.desc);
+                
+                const recordElement = document.createElement('div');
+                recordElement.className = 'record-item';
+                recordElement.innerHTML = `
+                    <div class="record-info" style="flex: 1;">
+                        <div class="record-desc">${record.desc}</div>
+                        <div class="record-meta">${record.category || '其他'} · ${formatDate(record.date)}</div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; margin-left: 10px;">
+                        <div class="record-amount ${record.type === '收入' ? 'income' : 'expense'}" style="margin-bottom: 5px;">
+                            ${record.type === '收入' ? '+' : '-' }${record.amount.toFixed(2)}
+                        </div>
+                        <div style="display: flex; gap: 5px;">
+                            <button onclick="editRecord(${originalIndex})" style="padding: 5px 10px; font-size: 12px;">编辑</button>
+                            <button onclick="deleteRecord(${originalIndex})" style="padding: 5px 10px; font-size: 12px; background-color: #e74c3c;">删除</button>
+                        </div>
+                    </div>
+                `;
+                recordsList.appendChild(recordElement);
+            });
+        }
+        
+        // 更新图表
+        function updateChart(records) {
+            // 计算各分类支出
+            const expenseByCategory = {};
+            
+            records.filter(r => r.type === '支出').forEach(record => {
+                const category = record.category || '其他';
+                if (!expenseByCategory[category]) {
+                    expenseByCategory[category] = 0;
+                }
+                expenseByCategory[category] += record.amount;
+            });
+            
+            // 准备图表数据
+            const labels = Object.keys(expenseByCategory);
+            const data = Object.values(expenseByCategory);
+            
+            // 生成随机颜色
+            const backgroundColors = labels.map(() => {
+                const r = Math.floor(Math.random() * 255);
+                const g = Math.floor(Math.random() * 255);
+                const b = Math.floor(Math.random() * 255);
+                return `rgba(${r}, ${g}, ${b}, 0.7)`;
+            });
+            
+            // 创建或更新图表
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            
+            // 销毁旧图表
+            if (window.expenseChart) {
+                window.expenseChart.destroy();
+            }
+            
+            // 创建新图表
+            window.expenseChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        borderColor: backgroundColors.map(color => color.replace('0.7', '1')),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: '支出分类占比'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 编辑科目
+        function editCategory(categoryId) {
+            const category = categories[categoryId];
+            if (!category) return;
+            
+            const newName = prompt('请输入科目名称:', category.name);
+            if (newName) {
+                const newKeywords = prompt('请输入关键字（用逗号分隔）:', category.keywords.join(','));
+                if (newKeywords !== null) {
+                    category.name = newName;
+                    category.keywords = newKeywords.split(',').map(k => k.trim());
+                    localStorage.setItem('categories', JSON.stringify(categories));
+                }
+            }
+        }
+        
+        // 添加科目
+        function addCategory() {
+            const name = prompt('请输入科目名称:');
+            if (name) {
+                const keywords = prompt('请输入关键字（用逗号分隔）:');
+                if (keywords !== null) {
+                    const id = name.toLowerCase().replace(/\s+/g, '_');
+                    categories[id] = {
+                        name: name,
+                        keywords: keywords.split(',').map(k => k.trim())
+                    };
+                    localStorage.setItem('categories', JSON.stringify(categories));
+                    // 重新渲染科目列表
+                    renderCategories();
+                }
+            }
+        }
+        
+        // 导出数据
+        function exportData() {
+            const data = {
+                records: records,
+                categories: categories,
+                exportDate: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `account_${formatDateInput(new Date())}.json`;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+        }
+        
+        // 导入数据
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (data.records) {
+                            records = data.records;
+                            localStorage.setItem('accountRecords', JSON.stringify(records));
+                            window.records = records;
+                        }
+                        if (data.categories) {
+                            categories = data.categories;
+                            localStorage.setItem('categories', JSON.stringify(categories));
+                        }
+                        updateHomePage();
+                        alert('数据导入成功！');
+                    } catch (error) {
+                        alert('数据导入失败，请检查文件格式。');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            
+            input.click();
+        }
+        
+        // 编辑记录
+        function editRecord(index) {
+            const record = records[index];
+            if (!record) return;
+            
+            editingIndex = index;
+            
+            // 将记录信息填充到快速输入栏
+            document.getElementById('quickInputText').value = `${record.desc} ${record.amount}元`;
+            
+            // 切换到首页
+            switchPage('homePage', '首页');
+            
+            // 滚动到快速输入栏
+            document.querySelector('.quick-input').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // 删除记录
+        function deleteRecord(index) {
+            if (confirm('确定要删除这条记录吗？')) {
+                records.splice(index, 1);
+                localStorage.setItem('accountRecords', JSON.stringify(records));
+                window.records = records;
+                updateHomePage();
+                
+                // 如果当前在查询页面，也更新查询结果
+                if (document.getElementById('queryPage').classList.contains('active')) {
+                    applyFilters();
+                }
+            }
+        }
+        
+        // 工具函数：格式化日期
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+        }
+        
+        // 工具函数：格式化日期输入
+        function formatDateInput(date) {
+            return date.toISOString().split('T')[0];
+        }
+        
+        // 初始化应用
+        function initApp() {
+            updateHomePage();
+        }
+        
+        // 页面加载完成后初始化
+        window.onload = initApp;
+    </script>
+</body>
+</html>
